@@ -1,15 +1,10 @@
-Hungary
-Australia
 Thailand
 Denmark
-New Zealand
 Portugal
 USA
 Italy
 Austria
 Japan
-Czech Republic
-Ireland
 Israel
 Norway
 Switzerland
@@ -18,20 +13,12 @@ Spain
 China
 Canada
 Finland
-Slovakia
-Slovenia
 Germany
 Poland
 France
-Indonesia
-Argentina
 UK
 Turkey
-Bulgaria
-Sweden
 South Korea
 Russia
-Brazil
-Netherlands
 Belgium
 Singapore
