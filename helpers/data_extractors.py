@@ -3,9 +3,11 @@ import json
 from pathlib import Path
 import csv
 from matplotlib import pyplot as plt
+from collections import defaultdict
 
 import requests
 import pandas as pd
+import numpy as np
 from datetime import timedelta
 
 pd.options.mode.chained_assignment = None
@@ -129,7 +131,7 @@ def calculate_transmission_data(country_name, time_window=2):
         daily_new_cases_data, active_cases_data = extract_case_numbers(country_name)
         country_cases_data = {'daily_new_cases': daily_new_cases_data, 'active_cases': active_cases_data}
 
-        #with cases_path.open('w') as f:
+        # with cases_path.open('w') as f:
         #    json.dump(country_cases_data, f)
 
     else:
@@ -168,28 +170,28 @@ def merge_country_dfs(df1, df2):  # Merge by maxing
     return combined_df
 
 
-def create_measure_success_tuple(country_dfs,country_name):
+def create_measure_success_tuple(country_dfs, country_name):
     daily_new_cases, _ = extract_case_numbers(country_name)
     measure_df = country_dfs[country_name]
-    #calculate relative slope for all weeks
+    # calculate relative slope for all weeks
     week_relative_changes = []
-    for idx in range(0, len(daily_new_cases)-7, 7):
+    for idx in range(0, len(daily_new_cases) - 7, 7):
         date, cases = daily_new_cases[idx]
         if cases == 0:
-            week_relative_changes.append((date,0))
+            week_relative_changes.append((date, 0))
         else:
-            week_relative_change = daily_new_cases[idx+7][1]/cases
+            week_relative_change = daily_new_cases[idx + 7][1] / cases
             week_relative_changes.append((date, week_relative_change))
 
-    #create week triples
+    # create week triples
     measure_success_tuples = []
     for idx, (week_start, change) in enumerate(week_relative_changes):
-        prev_change = week_relative_changes[idx-1][1]
+        prev_change = week_relative_changes[idx - 1][1]
         if idx == 0 or change == 0 or prev_change == 0:
             continue
         else:
             measures = []
-            date_2_weeks_ago = week_start-timedelta(days=14)
+            date_2_weeks_ago = week_start - timedelta(days=14)
             measure_row: pd.DataFrame = measure_df.loc[measure_df['Date'] == date_2_weeks_ago]
             if len(measure_row) == 0:
                 continue
@@ -203,10 +205,92 @@ def create_measure_success_tuple(country_dfs,country_name):
     return measure_success_tuples
 
 
+def success_average(successes):
+    return sum(successes) / len(successes)
+
+
+def generate_success_measure_dict(country_dfs, ):
+    success_tuples = []
+    for country_name in country_dfs.keys():
+        success_tuples.extend(create_measure_success_tuple(country_dfs, country_name))
+
+    measure_dict = defaultdict(list)
+    for success_tuple in success_tuples:
+        for measure in success_tuple[0]:
+            if measure == 'Travel Restrictions_3':
+                continue
+            measure_dict[measure].append(success_tuple[1])
+    measure_dict = {k: success_average(v) for k, v in measure_dict.items()}
+
+    return measure_dict
+
+
+def forecast_for_country(country_dfs, country_name, weeks=8, active_measures_override=None):
+    country_df = country_dfs[country_name]
+    date = pd.Timestamp('2020-04-15')
+    measure_dict = generate_success_measure_dict(country_dfs)
+
+    current_measures_in_country: pd.DataFrame = country_df.loc[country_df['Date'] == date]
+    minimum_measure_coeff = 9.0
+    magic_sauce = 2.0  # Normalization factor to account for the missing data of falling numbers
+
+    if active_measures_override is not None:
+        active_measures = active_measures_override
+
+    else:  # Get current measures and use them
+
+        active_measures = []
+
+        for measure, active in current_measures_in_country.iteritems():
+            if measure != "Date" and active.tolist()[0] == 1:
+                active_measures.append(measure)
+
+    for active_measure in active_measures:
+        if active_measure == 'Travel Restrictions_3':
+            active_measure = 'Travel Restrictions_2'
+        minimum_measure_coeff = min(minimum_measure_coeff, measure_dict[active_measure])
+
+    minimum_measure_coeff /= magic_sauce
+
+    daily_cases, dates = calculate_transmission_data(country_name, time_window=2)
+    first_100_idx = (np.array(daily_cases) > 100).nonzero()[0][0]
+    daily_cases = daily_cases[first_100_idx:]
+    x_axis = range(len(daily_cases))
+    plt.plot(x_axis, daily_cases, 'b')
+
+    weekly_new_cases = [daily_cases[-1]]
+    weekly_x_axis = [x_axis[-1]]
+    for week in range(weeks):
+        next_value = weekly_new_cases[-1] * minimum_measure_coeff
+        x_value = weekly_x_axis[-1] + 7
+
+        if next_value > 100000:  # If too many new cases just stop
+            break
+
+        weekly_new_cases.append(next_value)
+        weekly_x_axis.append(x_value)
+
+    if active_measures_override is None:
+        plt.plot(weekly_x_axis, weekly_new_cases, 'k')
+
+    else:
+        plt.plot(weekly_x_axis, weekly_new_cases, 'r')
+
+
 if __name__ == '__main__':
-    country_name = 'Italy'
-    #calculate_transmission_data("Germany")
-    oxford_dfs = extract_oxford_measure_data()
+    country_name = 'Germany'
+    '''
+    ['Awareness Campaigns_1', 'Testing_1', 'Contact Tracing_2', 'School Closure_2', 'Workplace Closure_1', 'Cancel Public Events_2', 'Public Transport Closure_1', 
+    'Movement Restrictions_1', 'Cancel Public Events_1', 'Contact Tracing_1', 'Workplace Closure_2', 'Movement Restrictions_2', 'Travel Restrictions_2', 
+    'School Closure_1', 'Travel Restrictions_1', 'Testing_2', 'Public Transport Closure_2', 'Testing_3']
+'''
+    # calculate_transmission_data("Germany")
+    country_dfs = extract_oxford_measure_data()
+    forecast_for_country(country_dfs, country_name)
+
+    forecast_for_country(country_dfs, country_name, active_measures_override=['School Closure_2'])
+    plt.show()
+
     # merge_country_dfs(acaps_dfs[country_name], oxford_dfs[country_name])
-    #create_measure_success_tuple(country_dfs=oxford_dfs, country_name= country_name)
-    success_tuples = [create_measure_success_tuple(oxford_dfs, country_name) for country_name in oxford_dfs.keys()]
+    # create_measure_success_tuple(country_dfs=oxford_dfs, country_name= country_name)
+    # success_tuples = [create_measure_success_tuple(oxford_dfs, country_name) for country_name in oxford_dfs.keys()]

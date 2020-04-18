@@ -1,10 +1,11 @@
 from matplotlib import pyplot as plt
 from datetime import timedelta
-from helpers.data_extractors import calculate_transmission_data, create_measure_success_tuple, extract_oxford_measure_data
+from helpers.data_extractors import calculate_transmission_data, create_measure_success_tuple, extract_oxford_measure_data, generate_success_measure_dict
 from random import choice
 from collections import defaultdict
 import numpy as np
 import seaborn as sns
+
 sns.set()
 
 
@@ -52,34 +53,23 @@ def visualise_measures_for_country(country_dfs, country_name):
             pass
 
 
-def success_average(successes):
-    return sum(successes)/len(successes)
-
 def visualise_measure_ranking(country_dfs):
-    success_tuples = []
-    for country_name in country_dfs.keys():
-        success_tuples.extend(create_measure_success_tuple(country_dfs, country_name))
-
-    measure_dict = defaultdict(list)
-    for success_tuple in success_tuples:
-        for measure in success_tuple[0]:
-            if measure == 'Travel Restrictions_3':
-                continue
-            measure_dict[measure].append(success_tuple[1])
-    measure_dict = {k: success_average(v) for k, v in measure_dict.items()}
+    measure_dict = generate_success_measure_dict(country_dfs)
 
     measure_list = sorted(measure_dict.items(), key=lambda x: x[1])
     measures, effect = zip(*measure_list)
-    effect = 1/np.array(effect)
+    effect = 1 / np.array(effect)
     measures = [get_measure_name(measure) for measure in measures]
-    plt.figure(figsize=(30,10))
+    plt.figure(figsize=(30, 10))
     plt.xticks(rotation=-80, fontsize=20)
     plt.bar(x=measures, height=effect)
 
+
 def visualise_effect_restriction_relation():
-    plt.figure(figsize=(20,20))
+    plt.figure(figsize=(20, 20))
     img = plt.imread('generated_data/effect_restriction_diagram.png')
     plt.imshow(img)
+
 
 if __name__ == '__main__':
     country_dfs = extract_oxford_measure_data()
