@@ -2,9 +2,11 @@ import re
 import json
 from pathlib import Path
 import csv
+from matplotlib import pyplot as plt
 
 import requests
 import pandas as pd
+from datetime import timedelta
 
 pd.options.mode.chained_assignment = None
 
@@ -86,8 +88,10 @@ def extract_case_numbers(country_name, use_who_data=True):
                 f.write(r.content)
 
         who_df = pd.read_csv(who_data_path)
-        country_rows = who_df[who_country_name_mapper(country_name)].dropna()
-        daily_new_cases_data = country_rows.tolist()
+        country_rows = who_df[who_country_name_mapper(country_name)]
+        date_rows = pd.to_datetime(who_df["date"], format='%Y-%m-%d')
+        daily_new_cases_data = list(zip(*(date_rows.tolist(), country_rows.tolist())))
+
         active_cases_data = []
 
     else:
@@ -163,13 +167,41 @@ def merge_country_dfs(df1, df2):  # Merge by maxing
     return combined_df
 
 
-def create_measure_week_success_triple(country_dfs,country_name):
-    daily_new_cases = extract_case_numbers(country_name)
+def create_measure_success_tuple(country_dfs,country_name):
+    daily_new_cases, _ = extract_case_numbers(country_name)
     measure_df = country_dfs[country_name]
+    #calculate relative slope for all weeks
+    week_relative_changes = []
+    for idx in range(0, len(daily_new_cases)-7, 7):
+        date, cases = daily_new_cases[idx]
+        if cases == 0:
+            week_relative_changes.append((date,0))
+        else:
+            week_relative_change = daily_new_cases[idx+7][1]/cases
+            week_relative_changes.append((date, week_relative_change))
 
+    #create week triples
+    measure_success_tuples = []
+    for idx, (week_start, change) in enumerate(week_relative_changes):
+        prev_change = week_relative_changes[idx-1][1]
+        if idx == 0 or change == 0 or prev_change == 0:
+            continue
+        else:
+            measures = []
+            date_2_weeks_ago = week_start-timedelta(days=14)
+            measure_row: pd.DataFrame = measure_df.loc[measure_df['Date'] == date_2_weeks_ago]
+            for measure, active in measure_row.iteritems():
+                if measure != "Date" and active.tolist()[0] == 1:
+                    measures.append(measure)
+
+            change_coefficient = change/prev_change
+            measure_success_tuple = (measures, change_coefficient)
+            measure_success_tuples.append(measure_success_tuple)
+    return measure_success_tuples
 
 
 if __name__ == '__main__':
     country_name = 'Germany'
     oxford_dfs = extract_oxford_measure_data()
     # merge_country_dfs(acaps_dfs[country_name], oxford_dfs[country_name])
+    create_measure_success_tuple(country_dfs=oxford_dfs, country_name= country_name)
