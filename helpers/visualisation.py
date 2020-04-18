@@ -85,6 +85,8 @@ def visualize_country_forecast(country_dfs, country_name, active_measures_overri
     plt.plot(weekly_x_axis, weekly_new_cases, 'k')
 
     if active_measures_override is not None and set(active_measures) != set(active_measures_override):
+        print(active_measures)
+        print(active_measures_override)
         _, _, weekly_x_axis, weekly_new_cases, active_measures = forecast_for_country(country_dfs, country_name, active_measures_override=active_measures_override)
         plt.plot(weekly_x_axis, weekly_new_cases, 'r')
 

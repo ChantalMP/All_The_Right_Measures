@@ -73,6 +73,8 @@ def extract_oxford_measure_data():
             for idx, measure_rate in country_rows[measure].iteritems():
                 measure_rate = int(measure_rate)
                 if measure_rate > 0:
+                    if measure_rate == 3 and measure == 'Travel Restrictions':
+                        continue
                     country_df[f'{measure}_{measure_rate}'][idx] = 1
 
         oxford_country_dfs[country] = country_df
@@ -306,7 +308,7 @@ if __name__ == '__main__':
 
     # calculate_transmission_data("Germany")
     country_dfs = extract_oxford_measure_data()
-    forecast_for_country(country_dfs, country_name)
+    #forecast_for_country(country_dfs, country_name)
     #generate_success_measure_dict(country_dfs)
 
     # forecast_for_country(country_dfs, country_name)
