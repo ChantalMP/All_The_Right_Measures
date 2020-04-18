@@ -80,12 +80,12 @@ def visualise_effect_restriction_relation():
 
 def visualize_country_forecast(country_dfs, country_name, active_measures_override=None):
     plt.figure(figsize=(20, 10))
-    x_axis, daily_cases, weekly_x_axis, weekly_new_cases = forecast_for_country(country_dfs, country_name, active_measures_override=None)
+    x_axis, daily_cases, weekly_x_axis, weekly_new_cases, active_measures = forecast_for_country(country_dfs, country_name, active_measures_override=None)
     plt.plot(x_axis, daily_cases, 'b')
     plt.plot(weekly_x_axis, weekly_new_cases, 'k')
 
-    if active_measures_override is not None:
-        _, _, weekly_x_axis, weekly_new_cases = forecast_for_country(country_dfs, country_name, active_measures_override=active_measures_override)
+    if active_measures_override is not None and set(active_measures) != set(active_measures_override):
+        _, _, weekly_x_axis, weekly_new_cases, active_measures = forecast_for_country(country_dfs, country_name, active_measures_override=active_measures_override)
         plt.plot(weekly_x_axis, weekly_new_cases, 'r')
 
     plt.show()
@@ -104,7 +104,7 @@ def create_toggle_buttons(country_dfs, country_name):
             active_measures.append(measure)
 
     for measure in sorted(country_df.columns):
-        if measure == 'Date' or measure == 'Travel Restrictions_3' or measure == 'Awareness Campaigns_2' or measure == 'Awareness Campaigns_3' or measure == 'Contact Tracing_3':  # exclude measures that were never performed
+        if measure == 'Date' or (measure.endswith('3') and not measure == 'Testing_3') or measure == 'Awareness Campaigns_2':  # exclude measures that were never performed
             continue
 
         value = measure in active_measures

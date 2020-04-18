@@ -208,8 +208,7 @@ def create_measure_success_tuple(country_dfs, country_name):
 def success_average(successes):
     return sum(successes) / len(successes)
 
-
-def generate_success_measure_dict(country_dfs, ):
+def generate_success_measure_dict(country_dfs):
     success_tuples = []
     for country_name in country_dfs.keys():
         success_tuples.extend(create_measure_success_tuple(country_dfs, country_name))
@@ -224,6 +223,38 @@ def generate_success_measure_dict(country_dfs, ):
 
     return measure_dict
 
+def success_accumulation(measures, measure_dict):
+    contained_success_dict = defaultdict(list)
+
+    contained_success_dict["Testing_3"] = ["Testing_2","Testing_1"]
+    contained_success_dict["Contact Tracing_2"] = ["Contact Tracing_1"]
+    contained_success_dict["School Closure_2"] = ["School Closure_1"]
+    contained_success_dict["Cancel Public Events_2"] = ["Cancel Public Events_1"]
+    #contained_success_dict["Public Transport Closure_1"] = ["Movement Restrictions_1"]
+    #contained_success_dict["Movement Restrictions_1"] = ["Travel_Restrictions_1"]
+    contained_success_dict["Workplace Closure_2"] = ["Workplace Closure_1"]
+    #contained_success_dict["Movement Restrictions_2"] = ["Movement Restrictions_1", "Public Transport Closure_1", "Public Transport Closure_2", "Travel_Restrictions_1", "Travel_Restrictions_2"
+    #                                                     , "Cancel Public Events_1", "Cancel Public Events_2"]
+    contained_success_dict["Travel Restrictions_2"] = ["Travel Restrictions_1"]
+    contained_success_dict["Testing_2"] = ["Testing_1"]
+    contained_success_dict["Public Transport Closure_2"] = ["Public Transport Closure_1"]
+    contained_success_dict["Testing_3"] = ["Testing_2", "Testing_1"]
+
+    measures_to_ignore = set()
+    for measure1 in measures:
+        for measure2 in measures:
+            if measure2 in contained_success_dict[measure1]:
+                measures_to_ignore.add(measure2)
+
+    relevant_measures = list(set(measures) - measures_to_ignore)
+    relevant_coeffs = {k:v for k,v in measure_dict.items() if k in relevant_measures}
+    normalized_coeffs = {k:v/90.0+0.9 for k,v in measure_dict.items()}
+
+    minimum_measure, minimum_coeff = sorted(relevant_coeffs.items(), key=lambda x:x[1])[0]
+    for measure, coeff in normalized_coeffs.items():
+        if measure in relevant_measures and measure != minimum_measure:
+            minimum_coeff *= coeff
+    return minimum_coeff
 
 def forecast_for_country(country_dfs, country_name, weeks=8, active_measures_override=None):
     country_df = country_dfs[country_name]
@@ -232,7 +263,6 @@ def forecast_for_country(country_dfs, country_name, weeks=8, active_measures_ove
 
     current_measures_in_country: pd.DataFrame = country_df.loc[country_df['Date'] == date]
     minimum_measure_coeff = 9.0
-    magic_sauce = 2.0  # Normalization factor to account for the missing data of falling numbers
 
     if active_measures_override is not None:
         active_measures = active_measures_override
@@ -245,12 +275,11 @@ def forecast_for_country(country_dfs, country_name, weeks=8, active_measures_ove
             if measure != "Date" and active.tolist()[0] == 1:
                 active_measures.append(measure)
 
+
     for active_measure in active_measures:
         if active_measure == 'Travel Restrictions_3':
             active_measure = 'Travel Restrictions_2'
-        minimum_measure_coeff = min(minimum_measure_coeff, measure_dict[active_measure])
-
-    minimum_measure_coeff /= magic_sauce
+        minimum_measure_coeff = success_accumulation(active_measures, measure_dict)
 
     daily_cases, dates = calculate_transmission_data(country_name, time_window=2)
     first_100_idx = (np.array(daily_cases) > 100).nonzero()[0][0]
@@ -269,19 +298,16 @@ def forecast_for_country(country_dfs, country_name, weeks=8, active_measures_ove
         weekly_new_cases.append(next_value)
         weekly_x_axis.append(x_value)
 
-    return x_axis, daily_cases, weekly_x_axis, weekly_new_cases
+    return x_axis, daily_cases, weekly_x_axis, weekly_new_cases, active_measures
 
 
 if __name__ == '__main__':
     country_name = 'Germany'
-    '''
-    ['Awareness Campaigns_1', 'Testing_1', 'Contact Tracing_2', 'School Closure_2', 'Workplace Closure_1', 'Cancel Public Events_2', 'Public Transport Closure_1', 
-    'Movement Restrictions_1', 'Cancel Public Events_1', 'Contact Tracing_1', 'Workplace Closure_2', 'Movement Restrictions_2', 'Travel Restrictions_2', 
-    'School Closure_1', 'Travel Restrictions_1', 'Testing_2', 'Public Transport Closure_2', 'Testing_3']
-'''
+
     # calculate_transmission_data("Germany")
     country_dfs = extract_oxford_measure_data()
     forecast_for_country(country_dfs, country_name)
+    #generate_success_measure_dict(country_dfs)
 
     # forecast_for_country(country_dfs, country_name)
 
