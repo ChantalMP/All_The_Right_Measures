@@ -17,7 +17,7 @@ def acaps_country_name_mapper(country_name):
         return country_name
 
 def who_country_name_mapper(country_name):
-    countries_map = {'USA': 'United States'}
+    countries_map = {'USA': 'United States', 'UK': 'United Kingdom'}
 
     if country_name in countries_map:
         return countries_map[country_name]

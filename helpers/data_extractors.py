@@ -88,6 +88,7 @@ def extract_case_numbers(country_name, use_who_data=True):
                 f.write(r.content)
 
         who_df = pd.read_csv(who_data_path)
+        who_df.fillna(0, inplace=True)
         country_rows = who_df[who_country_name_mapper(country_name)]
         date_rows = pd.to_datetime(who_df["date"], format='%Y-%m-%d')
         daily_new_cases_data = list(zip(*(date_rows.tolist(), country_rows.tolist())))
@@ -128,8 +129,8 @@ def calculate_transmission_data(country_name, time_window=2):
         daily_new_cases_data, active_cases_data = extract_case_numbers(country_name)
         country_cases_data = {'daily_new_cases': daily_new_cases_data, 'active_cases': active_cases_data}
 
-        with cases_path.open('w') as f:
-            json.dump(country_cases_data, f)
+        #with cases_path.open('w') as f:
+        #    json.dump(country_cases_data, f)
 
     else:
         with cases_path.open() as f:
@@ -145,7 +146,7 @@ def calculate_transmission_data(country_name, time_window=2):
             daily_cases.append(daily_new_cases_data[idx])
         else:
             for i in range(-time_window, time_window):
-                daily_cases_sum += daily_new_cases_data[idx + i]
+                daily_cases_sum += daily_new_cases_data[idx + i][1]
             average_case = daily_cases_sum / ((2 * time_window) + 1)
             daily_cases.append(average_case)
 
@@ -190,18 +191,22 @@ def create_measure_success_tuple(country_dfs,country_name):
             measures = []
             date_2_weeks_ago = week_start-timedelta(days=14)
             measure_row: pd.DataFrame = measure_df.loc[measure_df['Date'] == date_2_weeks_ago]
+            if len(measure_row) == 0:
+                continue
             for measure, active in measure_row.iteritems():
                 if measure != "Date" and active.tolist()[0] == 1:
                     measures.append(measure)
 
-            change_coefficient = change/prev_change
+            change_coefficient = change
             measure_success_tuple = (measures, change_coefficient)
             measure_success_tuples.append(measure_success_tuple)
     return measure_success_tuples
 
 
 if __name__ == '__main__':
-    country_name = 'Germany'
+    country_name = 'Italy'
+    #calculate_transmission_data("Germany")
     oxford_dfs = extract_oxford_measure_data()
     # merge_country_dfs(acaps_dfs[country_name], oxford_dfs[country_name])
-    create_measure_success_tuple(country_dfs=oxford_dfs, country_name= country_name)
+    #create_measure_success_tuple(country_dfs=oxford_dfs, country_name= country_name)
+    success_tuples = [create_measure_success_tuple(oxford_dfs, country_name) for country_name in oxford_dfs.keys()]
