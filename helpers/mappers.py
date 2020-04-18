@@ -1,3 +1,12 @@
+def oxford_country_name_mapper(country_name):
+    countries_map = {'USA': 'United States', 'Slovakia':'Slovak Republic','UK': 'United Kingdom'}
+
+    if country_name in countries_map:
+        return countries_map[country_name]
+
+    else:
+        return country_name
+
 def acaps_country_name_mapper(country_name):
     countries_map = {'USA': 'United States of America', 'UK': 'United Kingdom', 'South Korea': 'Korea Republic of', 'Russia': 'Russian Federation'}
 
@@ -7,6 +16,24 @@ def acaps_country_name_mapper(country_name):
     else:
         return country_name
 
+def who_country_name_mapper(country_name):
+    countries_map = {'USA': 'United States'}
+
+    if country_name in countries_map:
+        return countries_map[country_name]
+
+    else:
+        return country_name
+
+
+def worldometer_country_name_mapper(country_name):
+    countries_map = {'USA': 'us', 'New Zealand':'New-Zealand', 'Czech Republic':'Czech-Republic','South Korea': 'South-Korea'}
+
+    if country_name in countries_map:
+        return countries_map[country_name].lower()
+
+    else:
+        return country_name.lower()
 
 def acaps_measure_mapper(measure_name):
     measure_map = {'limit public gatherings': 'Public Gathering Limitations',
