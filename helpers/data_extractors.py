@@ -20,7 +20,7 @@ def extract_oxford_measure_data():
                                      'S7_International travel controls', 'S12_Testing framework', 'S13_Contact tracing'])
 
     oxford_df.rename(columns={'CountryName': 'COUNTRY', 'S1_School closing': 'School Closure', 'S2_Workplace closing': 'Workplace Closure',
-                              'S3_Cancel public events': 'Public Services Closure'
+                              'S3_Cancel public events': 'Cancel Public Events'
         , 'S4_Close public transport': 'Public Transport Closure', 'S5_Public information campaigns': 'Awareness Campaigns',
                               'S6_Restrictions on internal movement': 'Movement Restrictions', 'S7_International travel controls': 'Travel Restrictions',
                               'S12_Testing framework': 'Testing', 'S13_Contact tracing': 'Contact Tracing'}, inplace=True)
@@ -37,10 +37,17 @@ def extract_oxford_measure_data():
     oxford_country_dfs = {}
 
     for country in countries:
+        measures = ['School Closure', 'Workplace Closure', 'Cancel Public Events', 'Public Transport Closure', 'Awareness Campaigns', 'Movement Restrictions',
+                    'Travel Restrictions', 'Testing', 'Contact Tracing']
+
+        columns = ['Date']
+        for measure in measures:
+            for i in range(1, 4):
+                columns.append(f'{measure}_{i}')
+
         country_df = pd.DataFrame(
-            columns=['Date', 'Public Gathering Limitations', 'School Closure', 'Public Services Closure', 'Border Closure', 'Partial Lockdown', 'Full Lockdown',
-                     'Protective Gear', 'Flight Restrictions', 'Awareness Campaigns', 'Quarantine', 'Workplace Closure', 'Public Transport Closure',
-                     'Movement Restrictions', 'Travel Restrictions', 'Testing', 'Contact Tracing'])
+            columns=columns
+        )
 
         country_df['Date'] = dates
         country_df['Date'] = pd.to_datetime(country_df['Date'])
@@ -59,84 +66,14 @@ def extract_oxford_measure_data():
             if measure == 'COUNTRY' or measure == 'Date':
                 continue
 
-            if len(country_rows[measure].to_numpy().nonzero()[0]) > 0:
-                measure_date = country_rows['Date'][country_rows[measure].to_numpy().nonzero()[0][0]]
-                date_row_idx = date_as_index.get_loc(measure_date)
-                country_df[measure][date_row_idx:] = 1  # Set all values corresponding to that measure to 1 beginning from that date
+            for idx, measure_rate in country_rows[measure].iteritems():
+                measure_rate = int(measure_rate)
+                if measure_rate > 0:
+                    country_df[f'{measure}_{measure_rate}'][idx] = 1
 
         oxford_country_dfs[country] = country_df
 
     return oxford_country_dfs
-
-
-'''
-Schools Closure
-    Public Service Closure
-    Partial Lockdown
-    Full Lockdown
-    Protective Gear
-    Travel Restrictions (inclusive border)
-    Flight Restrictions
-    Awareness campaigns'''
-
-
-def extract_acaps_measure_data():
-    acaps_df = pd.read_excel('data/acaps_covid19_measures_dataset.xlsx', sheet_name=1, index_col=0,
-                             usecols=['ID', 'COUNTRY', 'REGION', 'LOG_TYPE', 'CATEGORY', 'MEASURE', 'TARGETED_POP_GROUP', 'COMMENTS', 'DATE_IMPLEMENTED',
-                                      'LINK'])
-
-    acaps_df.dropna(subset=['DATE_IMPLEMENTED'], inplace=True)
-    # df.dropna()
-    # df['DATE_IMPLEMENTED'] = pd.to_datetime(df['DATE_IMPLEMENTED'])
-    #
-    # # non_complicance?
-    # germany_rows = df.loc[df['COUNTRY'] == 'Germany']
-    #
-    # sorted_germany_rows = germany_rows.sort_values('DATE_IMPLEMENTED')
-
-    # measures_to_consider = ['Limit public gatherings', 'Introduction of isolation and quarantine policies', 'International flights suspension',
-    #                       'Border closure', 'Public services closure', 'Schools closure', 'Awareness campaigns']
-    # Strengthening the public health system,Visa restrictions,General recommendations, Health screenings in airports and border crossings,Domestic travel restrictions,Curfews,Partial lockdown,Surveillance and monitoring
-    # Testing policy,Full lockdown,Requirement to wear protective gear in public,strengthening the public health system,testing policy,Complete border closure
-
-    # Testing policy should be integrated differently
-    '''
-    Schools Closure
-    Public Service Closure
-    Partial Lockdown
-    Full Lockdown
-    Protective Gear
-    Travel Restrictions (inclusive border)
-    Flight Restrictions
-    Awareness campaigns
-    '''
-    with open('data/countries.txt') as f:
-        countries = f.read().splitlines()
-
-    dates = generate_dates()
-
-    acaps_country_dfs = {}
-
-    for country in countries:
-        country_df = pd.DataFrame(
-            columns=['Date', 'Public Gathering Limitations', 'School Closure', 'Public Services Closure', 'Border Closure', 'Partial Lockdown', 'Full Lockdown',
-                     'Protective Gear', 'Flight Restrictions', 'Awareness Campaigns', 'Quarantine'])
-
-        country_df['Date'] = dates
-        country_df['Date'] = pd.to_datetime(country_df['Date'])
-        country_df.fillna(0, inplace=True)
-        date_as_index = pd.Index(country_df['Date'])
-
-        country_rows: pd.DataFrame = acaps_df.loc[acaps_df['COUNTRY'] == acaps_country_name_mapper(country)]
-        for idx, country_row in country_rows.iterrows():
-            measure = acaps_measure_mapper(country_row['MEASURE'].lower().strip())
-            if measure:
-                date_row_idx = date_as_index.get_loc(country_row['DATE_IMPLEMENTED'])
-                country_df[measure][date_row_idx:] = 1  # Set all values corresponding to that measure to 1 beginning from that date
-
-        acaps_country_dfs[country] = country_df
-
-    return acaps_country_dfs
 
 
 def extract_case_numbers(country_name, use_who_data=True):
@@ -226,9 +163,13 @@ def merge_country_dfs(df1, df2):  # Merge by maxing
     return combined_df
 
 
+def create_measure_week_success_triple(country_dfs,country_name):
+    daily_new_cases = extract_case_numbers(country_name)
+    measure_df = country_dfs[country_name]
+
+
+
 if __name__ == '__main__':
     country_name = 'Germany'
-    acaps_dfs = extract_acaps_measure_data()
-
     oxford_dfs = extract_oxford_measure_data()
-    merge_country_dfs(acaps_dfs[country_name], oxford_dfs[country_name])
+    # merge_country_dfs(acaps_dfs[country_name], oxford_dfs[country_name])
