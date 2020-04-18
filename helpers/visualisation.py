@@ -13,8 +13,6 @@ from ipywidgets import interact, fixed, interact_manual
 from IPython.display import display
 from ipywidgets import Button, HBox, VBox, Layout
 
-sns.set()
-
 
 def get_measure_name(measure):
     measure_name, strictness = measure.split('_')
@@ -85,8 +83,6 @@ def visualize_country_forecast(country_dfs, country_name, active_measures_overri
     plt.plot(weekly_x_axis, weekly_new_cases, 'k')
 
     if active_measures_override is not None and set(active_measures) != set(active_measures_override):
-        print(active_measures)
-        print(active_measures_override)
         _, _, weekly_x_axis, weekly_new_cases, active_measures = forecast_for_country(country_dfs, country_name, active_measures_override=active_measures_override)
         plt.plot(weekly_x_axis, weekly_new_cases, 'r')
 
@@ -129,16 +125,6 @@ def create_toggle_buttons(country_dfs, country_name):
     return toggle_buttons
 
 
-'''
-
-widgets.Button(
-        description='Calculate',
-        disabled=False,
-        button_style='success',  # 'success', 'info', 'warning', 'danger' or ''
-        icon='check'
-    
-    
-    '''
 if __name__ == '__main__':
     country_dfs = extract_oxford_measure_data()
     from ipywidgets import ToggleButton
