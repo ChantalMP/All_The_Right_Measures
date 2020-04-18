@@ -256,7 +256,6 @@ def forecast_for_country(country_dfs, country_name, weeks=8, active_measures_ove
     first_100_idx = (np.array(daily_cases) > 100).nonzero()[0][0]
     daily_cases = daily_cases[first_100_idx:]
     x_axis = range(len(daily_cases))
-    plt.plot(x_axis, daily_cases, 'b')
 
     weekly_new_cases = [daily_cases[-1]]
     weekly_x_axis = [x_axis[-1]]
@@ -270,11 +269,7 @@ def forecast_for_country(country_dfs, country_name, weeks=8, active_measures_ove
         weekly_new_cases.append(next_value)
         weekly_x_axis.append(x_value)
 
-    if active_measures_override is None:
-        plt.plot(weekly_x_axis, weekly_new_cases, 'k')
-
-    else:
-        plt.plot(weekly_x_axis, weekly_new_cases, 'r')
+    return x_axis, daily_cases, weekly_x_axis, weekly_new_cases
 
 
 if __name__ == '__main__':
@@ -288,8 +283,7 @@ if __name__ == '__main__':
     country_dfs = extract_oxford_measure_data()
     forecast_for_country(country_dfs, country_name)
 
-    forecast_for_country(country_dfs, country_name, active_measures_override=['School Closure_2'])
-    plt.show()
+    # forecast_for_country(country_dfs, country_name)
 
     # merge_country_dfs(acaps_dfs[country_name], oxford_dfs[country_name])
     # create_measure_success_tuple(country_dfs=oxford_dfs, country_name= country_name)

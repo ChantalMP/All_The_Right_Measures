@@ -1,10 +1,17 @@
 from matplotlib import pyplot as plt
 from datetime import timedelta
-from helpers.data_extractors import calculate_transmission_data, create_measure_success_tuple, extract_oxford_measure_data, generate_success_measure_dict
+from helpers.data_extractors import calculate_transmission_data, create_measure_success_tuple, extract_oxford_measure_data, generate_success_measure_dict, \
+    forecast_for_country
 from random import choice
 from collections import defaultdict
 import numpy as np
 import seaborn as sns
+import pandas as pd
+import ipywidgets as widgets
+from ipywidgets import interact, fixed, interact_manual
+
+from IPython.display import display
+from ipywidgets import Button, HBox, VBox, Layout
 
 sns.set()
 
@@ -71,6 +78,67 @@ def visualise_effect_restriction_relation():
     plt.imshow(img)
 
 
+def visualize_country_forecast(country_dfs, country_name, active_measures_override=None):
+    plt.figure(figsize=(20, 10))
+    x_axis, daily_cases, weekly_x_axis, weekly_new_cases = forecast_for_country(country_dfs, country_name, active_measures_override=None)
+    plt.plot(x_axis, daily_cases, 'b')
+    plt.plot(weekly_x_axis, weekly_new_cases, 'k')
+
+    if active_measures_override is not None:
+        _, _, weekly_x_axis, weekly_new_cases = forecast_for_country(country_dfs, country_name, active_measures_override=active_measures_override)
+        plt.plot(weekly_x_axis, weekly_new_cases, 'r')
+
+    plt.show()
+
+
+def create_toggle_buttons(country_dfs, country_name):
+    country_df = country_dfs[country_name]
+    date = pd.Timestamp('2020-04-15')
+
+    current_measures_in_country = country_df.loc[country_df['Date'] == date]
+    active_measures = []
+    toggle_buttons = []
+
+    for measure, active in current_measures_in_country.iteritems():
+        if measure != "Date" and active.tolist()[0] == 1:
+            active_measures.append(measure)
+
+    for measure in sorted(country_df.columns):
+        if measure == 'Date' or measure == 'Travel Restrictions_3' or measure == 'Awareness Campaigns_2' or measure == 'Awareness Campaigns_3' or measure == 'Contact Tracing_3':  # exclude measures that were never performed
+            continue
+
+        value = measure in active_measures
+
+        toggle_button = widgets.ToggleButton(
+            value=value,
+            description=measure,
+            layout=Layout(width='25%', height='40px'),
+            disabled=False,
+            button_style='',  # 'success', 'info', 'warning', 'danger' or ''
+            icon='check'
+        )
+
+        toggle_buttons.append(toggle_button)
+
+    for i in range(0, len(toggle_buttons), 4):
+        h_box = HBox(toggle_buttons[i:i + 4])
+        display(h_box)
+
+    return toggle_buttons
+
+
+'''
+
+widgets.Button(
+        description='Calculate',
+        disabled=False,
+        button_style='success',  # 'success', 'info', 'warning', 'danger' or ''
+        icon='check'
+    
+    
+    '''
 if __name__ == '__main__':
     country_dfs = extract_oxford_measure_data()
+    from ipywidgets import ToggleButton
+
     visualise_measures_for_country(country_dfs, "Germany")
