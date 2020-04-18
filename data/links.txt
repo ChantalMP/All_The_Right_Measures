@@ -1,0 +1,4 @@
+https://www.kaggle.com/paultimothymooney/covid19-containment-and-mitigation-measures#COVID%2019%20Containment%20measures%20data.csv
+https://www.bsg.ox.ac.uk/research/research-projects/coronavirus-government-response-tracker
+https://www.acaps.org/covid19-government-measures-dataset
+https://github.com/owid/covid-19-data/blob/master/public/data/testing/covid-testing.xlsx
