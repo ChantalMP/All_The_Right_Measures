@@ -17,9 +17,6 @@ We used the following dataset for information about which country took which mea
 # Challenges we ran into
 The biggest challenge was to deal with noisy and incomplete data. As the crisis is still proceeding some effects could not yet show their full impact. Additionally the reporting of measures varies sometimes massively from country to country.
 
-# Accomplishments that we're proud of
-We feel like we extracted some useful information.
-
 # What we learned
 Even in a short amount of time, with relatively limited data and comparably simple techniques it is possible to distill way more information from given data than you can see by just looking at the raw numbers.
 
