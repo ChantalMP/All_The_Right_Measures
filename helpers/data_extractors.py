@@ -75,6 +75,9 @@ def extract_oxford_measure_data():
                 if measure_rate > 0:
                     if measure_rate == 3 and measure == 'Travel Restrictions':
                         continue
+
+                    if measure_rate == 1 and measure == 'Public Transport Closure':
+                        measure_rate = 2 # Just one public transport closure
                     country_df[f'{measure}_{measure_rate}'][idx] = 1
 
         oxford_country_dfs[country] = country_df
