@@ -4,6 +4,13 @@ Nobody is really sure how to best act in the fight against Covid19. To know whic
 # What we did
 Using data analysis techniques we extracted different findings that put in relation different measures to their effect. This could be used as a general guideline for deciding on which measures to take and which ones to drop.
 
+*Ranking of Different Measures against Covid19*
+![Test](generated_data/measure_ranking.png)
+*Plot Effectiveness in Relation to Restriction Degree*
+![](generated_data/effect_restriction_diagram.png)
+*Use Historical Data about Measures, to predict Future Development dependent upon Measures Taken*
+![](generated_data/prediction.png)
+
 # How we built it
 We used the following dataset for information about which country took which measures: Furthermore we took data about daily new Corona cases in all countries from the WHO website: We applied data analysis techniques to extract measure effects using the change in the new cases number from all countries where a specific measure was applied.
 
